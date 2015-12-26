@@ -43,12 +43,11 @@ void setup(void)
   Serial.println(F("Hello, CC3000!")); 
 
   Serial.print("Free RAM: "); Serial.println(getFreeRam(), DEC);
-  digitalWrite(ADAFRUIT_CC3000_VBAT, LOW);
-  delay(20);
-  digitalWrite(ADAFRUIT_CC3000_VBAT, HIGH);
   
   /* Initialise the module */
   Serial.println(F("Initializing..."));
+//  cc3000.begin();
+//  resetCC3000();
   if (!cc3000.begin(0))
   {
     Serial.println(F("Couldn't start the CC3000. Check your wiring?"));
@@ -68,7 +67,7 @@ void setup(void)
     Serial.println(F("Failed"));
   }
   // Optional SSID scan
-  // listSSIDResults();
+   listSSIDResults();
   
   Serial.print(F("Connecting to ")); Serial.println(WLAN_SSID);
   if (!cc3000.connectToAP(WLAN_SSID, WLAN_PASS, WLAN_SECURITY)) {
@@ -181,11 +180,6 @@ void setup(void)
   resetCC3000();
 }
 
-void loop(void)
-{
- delay(1000);
-}
-
 /**************************************************************************/
 /*!
     @brief  Begins an SSID scan and prints out all the visible networks
@@ -257,5 +251,9 @@ void resetCC3000(void) {
   digitalWrite(ADAFRUIT_CC3000_VBAT, LOW);
   delay(20);
   digitalWrite(ADAFRUIT_CC3000_VBAT, HIGH);
+}
+
+void loop(void) {
+  delay(1000);
 }
 

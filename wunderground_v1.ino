@@ -12,7 +12,7 @@
 // Use hardware SPI for the remaining pins
 // On an UNO, SCK = 13, MISO = 12, and MOSI = 11
 Adafruit_CC3000 cc3000 = Adafruit_CC3000(ADAFRUIT_CC3000_CS, ADAFRUIT_CC3000_IRQ, ADAFRUIT_CC3000_VBAT,
-                                         SPI_CLOCK_DIV2); // you can change this clock speed
+                                         SPI_CLOCK_DIVIDER); // you can change this clock speed
 
 #define WLAN_SSID       "rhino"           // cannot be longer than 32 characters!
 #define WLAN_PASS       "NaTa71A!"
@@ -55,13 +55,13 @@ void setup(void)
     while(1);
   }
   /* Setting MAC address */
-  Serial.println(F("Setting MAC address"));
-  uint8_t macAddress[6] = { 0x08, 0x00, 0x28, 0x01, 0x79, 0xB7 };
-   if (!cc3000.setMacAddress(macAddress))
-   {
-     Serial.println(F("Failed trying to update the MAC address"));
-     while(1);
-   }
+//  uint8_t macAddress[6] = { 0x08, 0x00, 0x28, 0x01, 0x79, 0xB7 };
+  Serial.println(F("Getting MAC address"));
+  uint8_t macAddress[6];
+  if (cc3000.getMacAddress(macAddress)) {
+    Serial.print(F("MAC address: "));
+    cc3000.printHexChar(macAddress, 6);
+  }
 
   Serial.println(F("Deleting profiles"));
   if (!cc3000.deleteProfiles()) {
@@ -119,14 +119,21 @@ void setup(void)
   ip = 0;
   // Try looking up the website's IP address
   Serial.print(WEBSITE); Serial.print(F(" -> "));
-  while (ip == 0) {
-    if (! cc3000.getHostByName(WEBSITE, &ip)) {
+  for (iLoopCount = 0; iLoopCount < 10; iLoopCount++) {
+    iRet = cc3000.getHostByName(WEBSITE, &ip);
+    if (!iRet) {
       Serial.println(F("Couldn't resolve!"));
     }
     delay(500);
   }
-
+  if (ip == 0) {
+    Serial.println(F("Could not get website IP address"));
+    resetCC3000();
+    return;
+  }
+  
   cc3000.printIPdotsRev(ip);
+  Serial.println(F(""));
   
   // Optional: Do a ping test on the website
   /*

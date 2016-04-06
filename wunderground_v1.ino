@@ -18,8 +18,12 @@ Adafruit_CC3000 cc3000 = Adafruit_CC3000(ADAFRUIT_CC3000_CS, ADAFRUIT_CC3000_IRQ
 #define WLAN_PASS       "NaTa71A!"
 // Security can be WLAN_SEC_UNSEC, WLAN_SEC_WEP, WLAN_SEC_WPA or WLAN_SEC_WPA2
 #define WLAN_SECURITY   WLAN_SEC_WPA2
+uint32_t ipAddress = cc3000.IP2U32(192, 168, 1, 12);
+uint32_t netMask = cc3000.IP2U32(255, 255, 255, 0);
+uint32_t defaultGateway = cc3000.IP2U32(192, 168, 1, 1);
+uint32_t dns = cc3000.IP2U32(8, 8, 4, 4);
 
-#define IDLE_TIMEOUT_MS  9999      // Amount of time to wait (in milliseconds) with no data 
+#define WEB_IDLE_TIMEOUT_MS  9999  // Amount of time to wait (in milliseconds) with no data 
                                    // received before closing the connection.  If you know the server
                                    // you're accessing is quick to respond, you can reduce this value.
 
@@ -62,12 +66,21 @@ void setup(void)
     cc3000.printHexChar(macAddress, 6);
   }
 
+  Serial.println(F("Getting CC3000 firmware version"));
+  uint8_t CC3000_firmware_version[2];
+  if (cc3000.getFirmwareVersion(&CC3000_firmware_version[0], &CC3000_firmware_version[1])) {
+    Serial.print(F("Firmware version: "));Serial.print(CC3000_firmware_version[0]); Serial.print(F(".")); Serial.println(CC3000_firmware_version[1]);
+  }
+
   Serial.println(F("Deleting profiles"));
   if (!cc3000.deleteProfiles()) {
     Serial.println(F("Failed"));
   }
   // Optional SSID scan
    listSSIDResults();
+
+//  Serial.println(F("Setting IP address"));
+//  setStaticIPaddress();
   
   Serial.print(F("Connecting to ")); Serial.println(WLAN_SSID);
   if (!cc3000.connectToAP(WLAN_SSID, WLAN_PASS, WLAN_SECURITY)) {
@@ -164,7 +177,7 @@ void setup(void)
   
   /* Read data until either the connection is closed, or the idle timeout is reached. */ 
   unsigned long lastRead = millis();
-  while (www.connected() && (millis() - lastRead < IDLE_TIMEOUT_MS)) {
+  while (www.connected() && (millis() - lastRead < WEB_IDLE_TIMEOUT_MS)) {
     while (www.available()) {
       char c = www.read();
       Serial.print(c);
@@ -244,6 +257,13 @@ bool displayConnectionDetails(void)
   }
 }
 
+void setStaticIPaddress(void) {
+  if (!cc3000.setStaticIPAddress(ipAddress, netMask, defaultGateway, dns)) {
+    Serial.println(F("Failed to set static IP!"));
+    while(1);
+  }
+}
+
 void resetCC3000(void) {
   cc3000.disconnect();
   cc3000.reboot();
@@ -251,6 +271,7 @@ void resetCC3000(void) {
   digitalWrite(ADAFRUIT_CC3000_VBAT, LOW);
   delay(20);
   digitalWrite(ADAFRUIT_CC3000_VBAT, HIGH);
+  Serial.println(F("CC3000 reset"));
 }
 
 void loop(void) {
